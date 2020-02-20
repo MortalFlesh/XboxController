@@ -94,12 +94,11 @@ module Controller =
                 return! getAsync index
         }
 
-    let waitFor index: Async<Controller> =
-        // todo - maybe all this body should be in the async{} so the watcher will be disposed after the controller is returned
+    let waitFor index: Async<Controller> = async {
         loadConnectedControllers()
 
         match index with
-        | IsConnected controller -> async { return controller }
+        | IsConnected controller -> return controller
         | _ ->
             use watcher = new XBox.XBoxControllerWatcher()
 
@@ -108,11 +107,8 @@ module Controller =
                 controller |> addConnected
             )
 
-            watcher.add_ControllerDisconnected(fun controller ->
-                Index controller.PlayerIndex |> removeConnected
-            )
-
-            getAsync index
+            return! getAsync index
+        }
 
     let private percent = function
         | underZero when underZero < 0.0 -> 0.0
