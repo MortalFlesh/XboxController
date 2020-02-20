@@ -11,46 +11,26 @@ For now, I'm only able to use it on Windows machine, since it uses `kernel32.dll
 
 ## Simple example
 ```fs
-let controller =
-    Controller.waitFor Controller.Any
-    |> Async.RunSynchronously
+async {
+    let! controller = Controller.waitFor Controller.Any
+    printfn "Controller is connected (%A)" controller
 
-printfn "Controller is connected (%A)" controller
+    let! _ =
+        [
+            controller |> Controller.onButtonPressedAsync Medium (function
+                | button -> printfn "Button pressed %A" button
+            )
 
-[
-    controller |> Controller.onButtonPressedAsync Medium (function
-        | A -> printfn "(A)"
-        | B -> printfn "(B)"
-        | X -> printfn "(X)"
-        | Y -> printfn "(Y)"
+            controller |> Controller.onPositionChangedAsync Medium (function
+                | PositionChanged.Lt (TriggerPressedPower power) -> printfn "Lt -> %A" power
+                | PositionChanged.Rt (TriggerPressedPower power) -> printfn "Rt -> %A" power
 
-        | Up -> printfn "Up"
-        | Down -> printfn "Down"
-        | Left -> printfn "Left"
-        | Right -> printfn "Right"
+                | PositionChanged.ThumbPadLeft { X = x; Y = y } -> printfn "ThumbPadLeft X: %A, Y: %A" x y
+                | PositionChanged.ThumbPadRight { X = x; Y = y } -> printfn "ThumbPadRight X: %A, Y: %A" x y
+            )
+        ]
+        |> Async.Parallel
 
-        | ThumbPadLeft -> printfn "<ThumbPadLeft>"
-        | ThumbPadRight -> printfn "<ThumbPadRight>"
-
-        | Lb -> printfn "[Lb]"
-        | Rb -> printfn "[Rb]"
-
-        | Lt -> printfn "[Lt]"
-        | Lr -> printfn "[Lr]"
-
-        | Back -> printfn "<Back>"
-        | Start -> printfn "<Start>"
-    )
-
-    controller |> Controller.onPositionChangedAsync Medium (function
-        | Lt (TriggerPressedPower power) -> printfn "Lt -> %A" power
-        | Rt (TriggerPressedPower power) -> printfn "Lr -> %A" power
-
-        | ThumpPadLeft { X = x; Y = y } -> printfn "ThumbPadLeft X: %A, Y: %A" x y
-        | ThumpPadRight { X = x; Y = y } -> printfn "ThumbPadRight X: %A, Y: %A" x y
-    )
-]
-|> Async.Parallel
-|> Async.RunSynchronously
-|> ignore
+    return ()
+}
 ```
